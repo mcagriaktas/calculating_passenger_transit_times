@@ -1,10 +1,11 @@
 # Date format modules
-from datetime import datetime
+import datetime
 
 # Main program modules
 from DatabaseController import DatabaseController
 from DataProcessor import DataProcessor
 from UserInteraction import UserInteraction  
+from Graph import Graph
 
 # Debugging modules
 import logging
@@ -33,8 +34,6 @@ def main():
         - Provides database entries' information through logging.
     """
 
-    logging.info("Starting main function")
-    start_time = datetime.now()
     ui = UserInteraction()
     db_controller = DatabaseController(
         mongo_ip="127.0.0.1", mongo_port=27017, mongo_authSource="admin", mongo_username="cagri",
@@ -44,35 +43,39 @@ def main():
     )
 
     db_controller.connect_to_mongodb("climac_positions_big")
-    start_datetime = ui.get_date_input("Enter start date and time")
-    end_datetime = ui.get_date_input("Enter end date and time")
-    num_areas = ui.get_integer_input("Enter the number of areas: ")
-    area_ids = ui.get_multiple_ids(num_areas)
-    table_name_input = ui.get_table_name("Enter your Postgres table name, ")
-    db_controller.connect_to_postgres()
-    vertices_map = db_controller.get_coordinates(area_ids)
+    user_inputs = ui.get_all_user_inputs()
     
-    df = db_controller.fetch_data_from_mongo(start_datetime=start_datetime, end_datetime=end_datetime)
-
-    vertices_list = [vertices_map[area_id] for area_id in area_ids if area_id in vertices_map]
+    logging.info("Starting main function")
+    start_time = datetime.datetime.now()
+    
+    db_controller.connect_to_postgres()
+    vertices_map = db_controller.get_coordinates(user_inputs['area_ids'])
+    
+    df = db_controller.fetch_data_from_mongo(start_datetime=user_inputs['start_datetime'], end_datetime=user_inputs['end_datetime'])
+    vertices_list = [vertices_map[area_id] for area_id in user_inputs['area_ids'] if area_id in vertices_map]
 
     processor = DataProcessor()
-    processing_choice = ui.get_processing_choice()
-    if processing_choice == 1:
+    processed_df = None
+    if user_inputs['processing_choice'] == 1:
         processed_df = processor.calculate_first_last_seen(df, vertices_list)
-    elif processing_choice == 2:
+    elif user_inputs['processing_choice'] == 2:
         processed_df = processor.calculate_transitions_between_areas(df, vertices_list)
 
-    if not processed_df.empty:
-        db_controller.write_to_postgres(processed_df, table_name=table_name_input)
+    if processed_df is not None and not processed_df.empty:
+        db_controller.write_to_postgres(processed_df, user_inputs['table_name'])
+        
+        if user_inputs['graph_choice'] == "Y":
+            visualization_data = db_controller.fetch_from_postgres(user_inputs['table_name'], processed_df.columns)
+            graph = Graph(visualization_data)
+            graph.plot_multiple_area_distributions()
+        else:
+            logging.info("Skipping graph generation.")
     else:
-        logging.info("No data to write to PostgreSQL.")
+        logging.info("No data to write to PostgreSQL or invalid processing choice.")
 
-    end_time = datetime.now()
+    end_time = datetime.datetime.now()
     elapsed_time = end_time - start_time
     logging.info(f"Total execution time: {elapsed_time}")
-
-    processed_df.info()
 
 if __name__ == "__main__":
     main()
