@@ -27,8 +27,8 @@ class Graph:
         # Create the plot
         plt.figure(figsize=(10, 6))
         category_counts.plot(kind='bar', color='skyblue')
-        plt.title(f'Distribution of First Seen Times for {area_name}')
-        plt.xlabel('Time Categories')
+        plt.title(f'First Seen Times for {area_name}')
+        plt.xlabel('Categories')
         plt.ylabel('Count')
         plt.xticks(rotation=45)  # Rotate category labels for better readability
         plt.grid(True)
