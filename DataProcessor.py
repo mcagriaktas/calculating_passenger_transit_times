@@ -5,16 +5,54 @@ import pandas as pd
 import logging
 
 class DataProcessor:
+    """
+    There are total 5 functions.
+        check_left_area
+        parse_position
+        is_point_in_polygon
+        calculate_first_last_seen
+        calculate_transitions_between_areas
+    """
     def __init__(self):
+        """
+        Initializes the DataProcessor class.
+        """
         pass
         
     def check_left_area(self, row, vertices):
+        """
+        Checks whether a point specified in the "POSITION" field of the provided row
+        is inside or outside a polygon defined by a list of vertices.
+
+        Args:
+            row (dict): A dictionary containing the "POSITION" field. 
+                        The "POSITION" field should be a string or a dictionary
+                        representing the coordinates.
+            vertices (list of tuple): A list of tuples representing the polygon's vertices.
+
+        Returns:
+            str: "in" if the point is inside the polygon, otherwise "out".
+        """
         x, y = self.parse_position(row["POSITION"])
         inside = self.is_point_in_polygon(x, y, vertices)
         return "in" if inside else "out"
     
     @staticmethod
     def parse_position(position):
+        """
+        Parses the "POSITION" data into (x, y) coordinates.
+
+        Args:
+            position (str or dict): The position data in string or dictionary format.
+                                    Example string format: "{'X': '5.0', 'Y': '3.0'}"
+                                    Example dictionary format: {'X': '5.0', 'Y': '3.0'}
+
+        Returns:
+            tuple: A tuple containing (x, y) coordinates as floats.
+
+        Raises:
+            ValueError: If the position is not a string or a dictionary.
+        """
         if isinstance(position, str):
             position_dict = eval(position)
         elif isinstance(position, dict):
@@ -25,6 +63,17 @@ class DataProcessor:
 
     @staticmethod
     def is_point_in_polygon(px, py, vertices):
+        """
+        Determines whether a point (px, py) lies inside a polygon.
+
+        Args:
+            px (float): The x-coordinate of the point.
+            py (float): The y-coordinate of the point.
+            vertices (list of tuple): A list of tuples representing the polygon's vertices.
+
+        Returns:
+            bool: True if the point is inside the polygon, otherwise False.
+        """
         n = len(vertices)
         inside = False
         xinters = 0
@@ -42,6 +91,22 @@ class DataProcessor:
         return inside
     
     def calculate_first_last_seen(self, df, vertices_list):
+        """
+        Calculate the first and last seen times for each unique identifier within a main area and multiple smaller areas,
+        based on a given DataFrame. It also categorizes dwell times into specific ranges.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame containing positional data. It should have at least the following columns:
+                - "WINDOW_START" (int or float): Unix timestamps in seconds indicating the start of observation.
+                - "CLIMAC" (str or int): Unique identifier for each observed entity.
+            vertices_list (list of list of tuples): A list of polygon vertex sets.
+                Each vertex set should define the boundaries of a particular area.
+                Example format: [[(x1, y1), (x2, y2), ...], [(x3, y3), ...], ...]
+
+        Returns:
+            pd.DataFrame: A DataFrame containing first and last seen times and total observation periods for each "CLIMAC",
+                          across both the main area and each specified sub-area.
+        """
         if df.empty:
             logging.warning("No data fetched from MongoDB. Exiting processing.")
             return pd.DataFrame()
@@ -79,12 +144,33 @@ class DataProcessor:
             result_df = result_df.merge(last_seen, on='CLIMAC', how='left')
             result_df = result_df.merge(area_total_time, on='CLIMAC', how='left')
 
+            bins = [0, 1, 10, 20, 30, 40, 50, float("inf")]
+            labels = ["Just Seen", "1-9", "10-19", "20-29", "30-39", "40-49", "50+"]
+            result_df[f"{area_name}_category"] = pd.cut(result_df[f"{area_name}_total"], bins=bins, labels=labels, right=False)
+
         result_df = result_df.where(pd.notnull(result_df), None)
         logging.info(f"Data processing completed for all areas.")
 
         return result_df
         
     def calculate_transitions_between_areas(self, df, vertices_list):
+        """
+        Calculate valid transitions between different areas based on positional data. 
+        Determines the first and last seen times for each unique identifier across each area and validates the transition sequence.
+
+        Args:
+            df (pd.DataFrame): Input DataFrame containing positional data. It should have at least the following columns:
+                - "WINDOW_START" (int or float): Unix timestamps in seconds indicating the start of observation.
+                - "CLIMAC" (str or int): Unique identifier for each observed entity.
+            vertices_list (list of list of tuples): A list of polygon vertex sets.
+                Each set defines the boundaries of a specific area.
+                Example format: [[(x1, y1), (x2, y2), ...], [(x3, y3), ...], ...]
+
+        Returns:
+            pd.DataFrame: A DataFrame containing valid sequences between different areas.
+                          It also contains categorized dwell times for each entity in the areas.
+                          If no valid sequences are found, returns an empty DataFrame.
+        """
         logging.info("Starting sequence-based processing...")
         if df.empty:
             logging.warning("No data fetched from MongoDB. Exiting processing.")
