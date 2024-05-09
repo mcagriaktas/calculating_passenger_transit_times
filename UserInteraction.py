@@ -3,6 +3,19 @@ import datetime
 import re 
 
 class UserInteraction:
+    """
+    There are total 10 functions
+        get_all_user_inputs
+        get_processing_choice
+        get_table_name
+        get_case_description
+        get_date_input
+        get_graph_choice
+        get_integer_input
+        get_area_details
+        get_time_frame
+        display_message
+    """
     def __init__(self):
         self.input = {}
 
@@ -29,7 +42,12 @@ class UserInteraction:
         return self.input
 
     def get_processing_choice(self):
-        """ Choose the processing type. """
+        """ 
+        Choose the processing type. 
+        
+        return:
+            int: integer value for user input
+        """
         print("Choose the processing type:")
         print("1: Standard area processing")
         print("2: Sequence-based processing (discard records not meeting sequence conditions)")
