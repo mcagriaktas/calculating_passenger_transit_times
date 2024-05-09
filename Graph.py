@@ -2,6 +2,13 @@
 import matplotlib.pyplot as plt
 
 class Graph:
+    """
+    There are total 3 functions.
+        plot_area_distribution
+        plot_multiple_area_distributions
+        plot_multiple_area_distributions
+    """
+    
     def __init__(self, data):
         """
         Initializes the Graph with data.
