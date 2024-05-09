@@ -32,7 +32,6 @@ def main():
         - Provides database entries' information through logging.
     """
 
-    # Initialize necessary classes
     ui = UserInteraction()
     user_inputs = ui.get_all_user_inputs()
     db_controller = DatabaseController(
@@ -96,7 +95,6 @@ def main():
     else:
         logging.info("No data fetched from MongoDB for the given time range.")
 
-    # Log total execution time
     end_time = datetime.datetime.now()
     elapsed_time = end_time - start_time
     logging.info(f"Total execution time: {elapsed_time}")
