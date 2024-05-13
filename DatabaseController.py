@@ -118,24 +118,24 @@ class DatabaseController:
         df = pd.DataFrame(list(x))
         return df
 
-    def fetch_from_postgres(self, columns):
+    def fetch_from_postgres(self, columns, start_datetime, end_datetime):
         """
         Fetches data from a PostgreSQL table, handling multiple columns and truncating datetime fields.
-
-        Args:
-        wifi_main (str): The name of the PostgreSQL table to fetch data from.
-        columns (list): List of column names to fetch, with datetime truncation applied if needed.
-
-        Returns:
-        DataFrame: A pandas DataFrame containing the fetched data.
         """
         trunc_columns = []
         for column in columns:
             if 'first_seen' in column:
                 trunc_columns.append(f"DATE_TRUNC('hour', {column}) AS {column}")
-        query = f"SELECT {', '.join(trunc_columns)} FROM wifi_main"
-        return pd.read_sql(query, self.postgres_engine)
-    
+        
+        # Using parameters to safely include datetime values
+        query = text(f"""
+            SELECT {', '.join(trunc_columns)}
+            FROM wifi_main
+            WHERE area1_first_seen >= :start_datetime AND area1_last_seen <= :end_datetime
+        """)
+        
+        return pd.read_sql(query, self.postgres_engine, params={'start_datetime': start_datetime, 'end_datetime': end_datetime})
+
     def add_area_columns(self, num_areas):
         """
         Dynamically add new area columns to the "wifi_main" table in PostgreSQL.
