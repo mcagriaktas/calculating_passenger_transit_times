@@ -32,6 +32,14 @@ def main():
         - Provides database entries' information through logging.
     """
 
+    print("""
+    ###########################################################
+    ########### Calculate Transitions Between Areas ###########
+    ###########                                     ###########
+    ###########                                     ###########
+    ###########################################################
+    """)
+
     ui = UserInteraction()
     user_inputs = ui.get_all_user_inputs()
     db_controller = DatabaseController(
@@ -41,13 +49,6 @@ def main():
         postgres_password="3541"
     )
   
-    print("""
-    ###########################################################
-    ########### Calculate Transitions Between Areas ###########
-    ###########                                     ###########
-    ###########                                     ###########
-    ###########################################################
-        """)
     logging.info("Starting main function")
     start_time = datetime.datetime.now()
 
