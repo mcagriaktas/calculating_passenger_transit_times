@@ -20,3 +20,8 @@ Outputs:
     - Data is written to the PostgreSQL database if applicable.
     - Logs the process and any errors or important information.
     - Provides database entries' information through logging.
+
+![image](https://github.com/mcagriaktas/calculating_passenger_transit_times/assets/52080028/a1d6bbd8-cac9-4873-8057-69e9559efd4e)
+
+![image](https://github.com/mcagriaktas/calculating_passenger_transit_times/assets/52080028/9a25cbe6-cb8f-4183-8ccd-cb5ea73655f2)
+
